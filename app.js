@@ -140,19 +140,37 @@ app.get("/login", function(req, res) {
 });
 
 app.get("/secrets", function(req, res) { //let us to go directly to /secrets if we already authenticated and the session is saved in the cookie. the cookie can be seen in the chrome settings
-  if (req.isAuthenticated()) {
-    res.render("secrets");
-  } else {
-    res.redirect("/login");
-  }
+  User.find({secret: {$ne: null}}, function(err, foundUsers){
+    if(err){
+      console.log(err);
+    } else {
+      if(foundUsers){
+        res.render("secrets", {usersWithSecrets: foundUsers});
+      }
+    }
+  });
+
 });
 
-app.get("/submit", function(req, res){
+app.get("/submit", function(req, res){ //let us to go directly to /submit if we already authenticated and the session is saved in the cookie. the cookie can be seen in the chrome settings
   if (req.isAuthenticated()) {
     res.render("submit");
   } else {
     res.redirect("/login");
   }
+});
+
+app.post("/submit", function(req, res){
+  const submittedSecret = req.body.secret;
+  console.log(req.user); //passport save the user that loged in
+  User.findById(req.user.id, function(err, foundUser){
+    if (err){
+      console.log(err);
+    } else {
+      foundUser.secret = submittedSecret;
+      foundUser.save(res.redirect("/secrets"));
+    }
+  });
 });
 
 app.get("/logout", function(req, res) {
